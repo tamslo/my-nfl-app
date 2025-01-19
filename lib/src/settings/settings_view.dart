@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_nfl_app/src/settings/settings_service.dart';
 
 import 'settings_controller.dart';
 
@@ -30,20 +31,12 @@ class SettingsView extends StatelessWidget {
           value: controller.themeMode,
           // Call the updateThemeMode method any time the user selects a theme.
           onChanged: controller.updateThemeMode,
-          items: const [
+          items: selectableThemes.map((selectableTheme) =>
             DropdownMenuItem(
-              value: ThemeMode.system,
-              child: Text('System Theme'),
+              value: selectableTheme.mode,
+              child: Text(selectableTheme.displayString),
             ),
-            DropdownMenuItem(
-              value: ThemeMode.light,
-              child: Text('Light Theme'),
-            ),
-            DropdownMenuItem(
-              value: ThemeMode.dark,
-              child: Text('Dark Theme'),
-            )
-          ],
+          ).toList(),
         ),
       ),
     );
