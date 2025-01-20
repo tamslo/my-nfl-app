@@ -2,5 +2,13 @@
   "appTitle": "NFL Updates",
   "@appTitle": {
     "description": "The title of the application"
-  }
+  },
+  "viewStandings": "View current standings",
+  "@viewStandings": {},
+  "watchScripted": "Watch scripted",
+  "@watchScripted": {},
+  "watchWeekHighlights": "Watch week highlights",
+  "@watchWeekHighlights": {},
+  "noSeason": "Season did not start yet 😢",
+  "@noSeason": {}
 }

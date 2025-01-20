@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:my_nfl_app/src/updates/update.dart';
-import 'package:my_nfl_app/src/updates/update_list_view.dart';
+import 'package:my_nfl_app/src/season/season.dart';
+import 'package:my_nfl_app/src/season/season_view.dart';
 
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 
-/// The Widget that configures your application.
-class MyApp extends StatelessWidget {
-  const MyApp({
+class NflUpdatesApp extends StatefulWidget {
+  const NflUpdatesApp({
     super.key,
     required this.settingsController,
   });
+
   final SettingsController settingsController;
+
+  @override
+  State<NflUpdatesApp> createState() => _NflUpdatesAppState();
+}
+class _NflUpdatesAppState extends State<NflUpdatesApp> {
+  late Future<Season> futureSeason;
+
+  @override
+  void initState() {
+    super.initState();
+    futureSeason = getSeasonData();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final testUpdates = [
-      const Update('Week 1'),
-      const Update('Wildcard weekend'),
-    ].reversed.toList();
     return ListenableBuilder(
-      listenable: settingsController,
+      listenable: widget.settingsController,
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
           restorationScopeId: 'app',
@@ -38,16 +47,28 @@ class MyApp extends StatelessWidget {
               AppLocalizations.of(context)!.appTitle,
           theme: ThemeData(),
           darkTheme: ThemeData.dark(),
-          themeMode: settingsController.themeMode,
+          themeMode: widget.settingsController.themeMode,
           onGenerateRoute: (RouteSettings routeSettings) {
             return MaterialPageRoute<void>(
               settings: routeSettings,
               builder: (BuildContext context) {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
-                    return SettingsView(controller: settingsController);
+                    return SettingsView(controller: widget.settingsController);
                   default:
-                    return UpdateListView(updates: testUpdates);
+                    return FutureBuilder<Season>(
+                      future: futureSeason,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return SeasonView(season: snapshot.data!);
+                        } else if (snapshot.hasError) {
+                          return Text('${snapshot.error}');
+                        }
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                    );
                 }
               },
             );

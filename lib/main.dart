@@ -8,5 +8,5 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settingsController = SettingsController(SettingsService());
   await settingsController.loadSettings();
-  runApp(MyApp(settingsController: settingsController));
+  runApp(NflUpdatesApp(settingsController: settingsController));
 }
