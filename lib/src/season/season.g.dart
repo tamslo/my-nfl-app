@@ -8,6 +8,7 @@ part of 'season.dart';
 
 Season _$SeasonFromJson(Map<String, dynamic> json) => Season(
       year: (json['year'] as num).toInt(),
+      lastUpdated: DateTime.parse(json['lastUpdated'] as String),
       weeks: (json['weeks'] as List<dynamic>?)
           ?.map((e) => Week.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -15,6 +16,7 @@ Season _$SeasonFromJson(Map<String, dynamic> json) => Season(
 
 Map<String, dynamic> _$SeasonToJson(Season instance) => <String, dynamic>{
       'year': instance.year,
+      'lastUpdated': instance.lastUpdated.toIso8601String(),
       'weeks': instance.weeks?.map((e) => e.toJson()).toList(),
     };
 
