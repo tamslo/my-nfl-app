@@ -1,4 +1,5 @@
 {
+  "@@locale": "en",
   "appTitle": "NFL Updates",
   "@appTitle": {
     "description": "The title of the application"
