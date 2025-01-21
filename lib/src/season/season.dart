@@ -2,12 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'season.g.dart';
 
-final Map<int, String> seasonTypes = {
-  1: 'Preseason',
-  2: 'Regular season',
-  3: 'Postseason',
-};
-
 @JsonSerializable(explicitToJson: true)
 class Season {
   const Season({
@@ -29,6 +23,7 @@ class Week {
   Week({
     required this.seasonType,
     required this.number,
+    required this.name,
     required this.games,
     this.videos,
     this.hasUpdates = false,
@@ -36,26 +31,15 @@ class Week {
 
   final int seasonType;
   final int number;
+  final String name;
   @JsonKey(includeToJson: false)
   @JsonKey(includeFromJson: false)
   final bool hasUpdates;
-  final List<Game> games;
+  final List<Game>? games;
   final List<Video>? videos;
 
   factory Week.fromJson(Map<String, dynamic> json) => _$WeekFromJson(json);
   Map<String, dynamic> toJson() => _$WeekToJson(this);
-
-  String get title => seasonType == 1
-    ? 'Preseason Week $number'
-    : seasonType == 2
-      ? 'Week $number'
-      : number == 1
-        ? 'Wild Card Weekend'
-        : number == 2
-          ? 'Divisional Round'
-          : number == 3
-            ? 'Conference Championships'
-            : 'Super Bowl';
 
   bool get isPreseason => seasonType == 1;  
   bool get isRegularSeason => seasonType == 2;

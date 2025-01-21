@@ -28,12 +28,12 @@ class SeasonView extends StatelessWidget {
                   dividerColor: Colors.transparent,
                 ),
                 child: ExpansionTile(
-                  title: Text(week.title),
+                  title: Text(week.name),
                   initiallyExpanded: week.hasUpdates,
                   children: [
-                    ...week.games.map(
+                    ...week.games?.map(
                       (game) => _buildGameInfo(context, game)
-                    ),
+                    ) ?? [const SizedBox.shrink()],
                     ...week.videos?.map(
                       (video) => _buildVideo(context, video)
                     ) ?? [const SizedBox.shrink()],

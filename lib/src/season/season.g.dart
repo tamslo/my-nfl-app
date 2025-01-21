@@ -23,8 +23,9 @@ Map<String, dynamic> _$SeasonToJson(Season instance) => <String, dynamic>{
 Week _$WeekFromJson(Map<String, dynamic> json) => Week(
       seasonType: (json['seasonType'] as num).toInt(),
       number: (json['number'] as num).toInt(),
-      games: (json['games'] as List<dynamic>)
-          .map((e) => Game.fromJson(e as Map<String, dynamic>))
+      name: json['name'] as String,
+      games: (json['games'] as List<dynamic>?)
+          ?.map((e) => Game.fromJson(e as Map<String, dynamic>))
           .toList(),
       videos: (json['videos'] as List<dynamic>?)
           ?.map((e) => Video.fromJson(e as Map<String, dynamic>))
@@ -35,7 +36,8 @@ Week _$WeekFromJson(Map<String, dynamic> json) => Week(
 Map<String, dynamic> _$WeekToJson(Week instance) => <String, dynamic>{
       'seasonType': instance.seasonType,
       'number': instance.number,
-      'games': instance.games.map((e) => e.toJson()).toList(),
+      'name': instance.name,
+      'games': instance.games?.map((e) => e.toJson()).toList(),
       'videos': instance.videos?.map((e) => e.toJson()).toList(),
     };
 

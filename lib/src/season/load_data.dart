@@ -5,70 +5,86 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _seasonCacheKey = 'seasonCache';
 
-Future<Season> _loadFullSeasonData() async {
-  // If not cached, should get season info from
-  // https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/season
-  // Should get types info from all items in
-  // http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types
-    // Get all current weeks of current type
-    // http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks
+Future<dynamic> _getData(String url) async {
+  final response = await http.get(Uri.parse(url));
+  final data = await json.decode(response.body);
+  return data;
+}
+
+Future<dynamic> _getQueryData(String query) async {
   const baseUrl =
     'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl';
-  const eventsUrl = '$baseUrl/events';
-  final response = await http.get(Uri.parse(eventsUrl));
-  final currentEvent = await json.decode(response.body);
-  final metaInformation = currentEvent['\$meta']['parameters'];
-  final seasonYear = int.parse(metaInformation['season'].first);
-  final int seasonType = int.parse(metaInformation['seasontypes'].first);
-  final int weekNumber = int.parse(metaInformation['week'].first);
-  // If regular season, should get game info of favorite team (SEA for now,
-  // should be changeable in settings); add game with datetime and scores, if
-  // present, and game highlight link, if done
-  // If postseason, should get info of all games
-  // Not sure what makes sense in preseason
-  // Should try to embed videos (not only create search string)
-  // Should try to show table in app (I guess ESPN also has table data)
-  final currentWeek = Week(
-    seasonType: seasonType,
-    number: weekNumber,
-    hasUpdates: true,
-    // Should add game infos here
-    games: [],
+  return _getData('$baseUrl/$query');
+}
+
+Uri _getYoutubeSearchLink(String query) => Uri.parse(
+  'https://m.youtube.com/results?search_query='
+  '${query.replaceAll(' ', '+')}'
+);
+
+Video _getWeekHighlightsVideo(String weekName) {
+  return Video(
+    name: 'All Highlights',
+    url: _getYoutubeSearchLink('NFL Every $weekName Highlight!'),
   );
-  // This will be fixed once stuff is more generic for cache
-  final tempLastWeek = Week(
-    seasonType: seasonType,
-    number: weekNumber - 1,
-    hasUpdates: true,
-    // Should add game infos here
-    games: [],
+}
+
+Video _getScriptedVideo(String weekName) {
+  return Video(
+    name: 'Scripted',
+    url:_getYoutubeSearchLink('Tom Grossi If the NFL Was Scripted: $weekName'),
   );
-  // If regular season, also add "NFL: every week y highlight!" to links
-  final weeks = weekNumber > 1
-    ? [
-        Week(
-          seasonType: seasonType,
-          number: weekNumber - 1,
-          hasUpdates: true,
-          // Should add game infos here
-          games: [],
-          videos: [
-            Video(
-              url: Uri.parse(
-                'https://m.youtube.com/results?search_query=Tom+Grossi+If+the+NFL+was+scripted+${tempLastWeek.title}'
-              ),
-              name: 'Scripted',
-            ),
-          ],
-        ),
-        currentWeek,
-      ]
-    : [currentWeek];
-  return Season(
-    year: seasonYear,
-    lastUpdated: DateTime.now(),
-    weeks: weeks,
-  );
+}
+
+Future<Season> _loadFullSeasonData() async {
+  final currentDate = DateTime.now();
+  final seasonData = await _getQueryData('season');
+  final seasonYear = seasonData['year'];
+  final seasonStart = DateTime.parse(seasonData['startDate']);
+  if (seasonStart.isAfter(currentDate)) {
+    return Season(year: seasonYear, lastUpdated: currentDate);
+  }
+  final typesUrlPrefix = 'seasons/$seasonYear/types';
+  final seasonTypesRefs = await _getQueryData(typesUrlPrefix);
+  final weeks = <Week>[];
+  for (final seasonType in seasonTypesRefs['items']) {
+    final seasonTypeData = await _getData(seasonType['\$ref']);
+    final seasonTypeId = int.parse(seasonTypeData['id']);
+    final weeksData = await _getQueryData('$typesUrlPrefix/$seasonTypeId/weeks');
+    for (final weekData in weeksData['items']) {
+      final weekInfo = await _getData(weekData['\$ref']);
+      final weekName = weekInfo['text'];
+      final games = <Game>[];
+      // For event in 'events' ...
+        // Not sure what makes sense in preseason
+        // If regular season, should get game info of favorite team (SEA for now,
+        // should be changeable in settings); add game with datetime and scores, if
+        // present, and game highlight link, if done
+        // If postseason, should get info of all games
+      // Should use last game date here (week often longer)
+      final weekEnd = DateTime.parse(weekInfo['endDate']);
+      final videos = seasonTypeId == 1 || weekEnd.isAfter(currentDate)
+        ? null
+        : seasonTypeId == 2
+          ? [
+              _getWeekHighlightsVideo(weekName),
+              _getScriptedVideo(weekName),
+            ]
+          : [_getScriptedVideo(weekName)];
+      final week = Week(
+        seasonType: seasonTypeId,
+        number: weekInfo['number'],
+        name: weekName,
+        games: games,
+        videos: videos,
+      );
+      weeks.add(week);
+      if (weekEnd.isAfter(currentDate)) break;
+    }
+    final seasonTypeEnd = DateTime.parse(seasonTypeData['endDate']);
+    if (seasonTypeEnd.isAfter(currentDate)) break;
+  }
+  return Season(year: seasonYear, lastUpdated: currentDate, weeks: weeks);
 }
 
 Future<Season> _updateSeasonData(String cachedSeasonData) async {
