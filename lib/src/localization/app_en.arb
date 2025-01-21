@@ -4,6 +4,12 @@
   "@appTitle": {
     "description": "The title of the application"
   },
+  "seasonTitle": "{seasonYear} Season",
+  "@seasonTitle": {
+    "placeholders": {
+      "seasonYear": {}
+    }
+  },
   "viewStandings": "View current standings",
   "@viewStandings": {},
   "watchVideo": "Watch {videoName}",

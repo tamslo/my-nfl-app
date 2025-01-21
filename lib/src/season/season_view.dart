@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:my_nfl_app/src/season/season.dart';
+import 'package:my_nfl_app/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../settings/settings_view.dart';
@@ -21,7 +22,7 @@ class SeasonView extends StatelessWidget {
       : [
           ...season.weeks!.reversed.map((week) => Card(
             child: Padding(
-              padding: const EdgeInsets.all(6.0),
+              padding: const EdgeInsets.all(smallSpace),
               child: Theme(
                 data: Theme.of(context).copyWith(
                   dividerColor: Colors.transparent,
@@ -43,8 +44,16 @@ class SeasonView extends StatelessWidget {
           )),
         ];
     final List<Widget> listItems = [
-      Text(season.year.toString()),
-      _buildStandingsLink(context, season.weeks?.last),
+      Padding(
+        padding: const EdgeInsets.only(bottom: mediumSpace),
+        child: Center(
+          child: Text(
+            AppLocalizations.of(context)!.seasonTitle(season.year),
+            style: const TextStyle(fontSize: headingSize),
+          ),
+        ),
+      ),
+      _maybeBuildStandingsLink(context, season.weeks?.last),
       ...seasonContent,
     ];
     return Scaffold(
@@ -60,7 +69,7 @@ class SeasonView extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(mediumSpace),
         child: ListView.builder(
             restorationId: 'SeasonView',
             itemCount: listItems.length,
@@ -82,14 +91,16 @@ class SeasonView extends StatelessWidget {
     );
   }
 
-  Widget _buildStandingsLink(BuildContext context, Week? lastWeek) {
-    if (lastWeek == null || ![2, 3].contains(lastWeek.seasonType)) {
+  Widget _maybeBuildStandingsLink(BuildContext context, Week? lastWeek) {
+    if (lastWeek == null) {
       return const SizedBox.shrink();
     }
-    final link = lastWeek.seasonType == 2
-      // Division should be dependent on favorite team
-      ? 'https://www.google.com/search?q=NFL+NFC+West+Standings'
-      : 'https://www.google.com/search?q=NFL+Playoffs';
+    final link = lastWeek.isPreseason
+      ? 'https://www.google.com/search?q=NFL+Preseason+News'
+      : lastWeek.isRegularSeason
+        // Division should be dependent on favorite team
+        ? 'https://www.google.com/search?q=NFL+NFC+West+Standings'
+        : 'https://www.google.com/search?q=NFL+Playoffs';
     return TextButton.icon(
       onPressed: () => launchUrl(Uri.parse(link)),
       icon: const Icon(FontAwesomeIcons.google),
