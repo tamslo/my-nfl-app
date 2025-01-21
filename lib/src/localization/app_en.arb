@@ -5,8 +5,12 @@
   },
   "viewStandings": "View current standings",
   "@viewStandings": {},
-  "watchScripted": "Watch scripted",
-  "@watchScripted": {},
+  "watchVideo": "Watch {videoName}",
+  "@watchVideo": {
+    "placeholders": {
+      "videoName": {}
+    }
+  },
   "watchWeekHighlights": "Watch week highlights",
   "@watchWeekHighlights": {},
   "noSeason": "Season did not start yet 😢",

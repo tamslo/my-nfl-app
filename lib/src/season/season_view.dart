@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:my_nfl_app/src/season/season.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,9 +29,14 @@ class SeasonView extends StatelessWidget {
                 child: ExpansionTile(
                   title: Text(week.title),
                   initiallyExpanded: week.hasUpdates,
-                  children: week.content.map(
-                    (item) => _buildContentItem(context, item)
-                  ).toList(),
+                  children: [
+                    ...week.games.map(
+                      (game) => _buildGameInfo(context, game)
+                    ),
+                    ...week.videos?.map(
+                      (video) => _buildVideo(context, video)
+                    ) ?? [const SizedBox.shrink()],
+                  ]
                 ),
               ),
             ),
@@ -38,6 +44,7 @@ class SeasonView extends StatelessWidget {
         ];
     final List<Widget> listItems = [
       Text(season.year.toString()),
+      _buildStandingsLink(context, season.weeks?.last),
       ...seasonContent,
     ];
     return Scaffold(
@@ -53,7 +60,7 @@ class SeasonView extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(6.0),
+        padding: const EdgeInsets.all(12.0),
         child: ListView.builder(
             restorationId: 'SeasonView',
             itemCount: listItems.length,
@@ -63,16 +70,30 @@ class SeasonView extends StatelessWidget {
     );
   }
 
-  Widget _buildContentItem(BuildContext context, WeekContent item) {
-    if (item is LinkWeekContent) {
-      return TextButton.icon(
-        onPressed: () => item.value != null
-          ? launchUrl(Uri.parse(item.value!))
-          : null,
-        icon: Icon(item.icon),
-        label: Text(item.getLabel(context)),
-      );
+  Widget _buildGameInfo(BuildContext context, Game game) {
+    return Text('TODO: show game content for ${game.toJson()}');
+  }
+
+  Widget _buildVideo(BuildContext context, Video video) {
+    return TextButton.icon(
+      onPressed: () => launchUrl(video.url),
+      icon: const Icon(FontAwesomeIcons.youtube),
+      label: Text(AppLocalizations.of(context)!.watchVideo(video.name)),
+    );
+  }
+
+  Widget _buildStandingsLink(BuildContext context, Week? lastWeek) {
+    if (lastWeek == null || ![2, 3].contains(lastWeek.seasonType)) {
+      return const SizedBox.shrink();
     }
-    return Text(item.value!);
+    final link = lastWeek.seasonType == 2
+      // Division should be dependent on favorite team
+      ? 'https://www.google.com/search?q=NFL+NFC+West+Standings'
+      : 'https://www.google.com/search?q=NFL+Playoffs';
+    return TextButton.icon(
+      onPressed: () => launchUrl(Uri.parse(link)),
+      icon: const Icon(FontAwesomeIcons.google),
+      label: Text(AppLocalizations.of(context)!.viewStandings),
+    );
   }
 }

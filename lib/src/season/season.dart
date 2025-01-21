@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:json_annotation/json_annotation.dart';
+
+part 'season.g.dart';
 
 final Map<int, String> seasonTypes = {
   1: 'Preseason',
@@ -10,6 +12,7 @@ final Map<int, String> seasonTypes = {
   3: 'Postseason',
 };
 
+@JsonSerializable(explicitToJson: true)
 class Season {
   const Season({
     required this.year,
@@ -17,20 +20,32 @@ class Season {
   });
   final int year;
   final List<Week>? weeks;
+
+  factory Season.fromJson(Map<String, dynamic> json) => _$SeasonFromJson(json);
+  Map<String, dynamic> toJson() => _$SeasonToJson(this);
+
 }
 
+@JsonSerializable(explicitToJson: true)
 class Week {
   Week({
     required this.seasonType,
     required this.number,
-    required this.hasUpdates,
-    required this.content,
+    required this.games,
+    this.videos,
+    this.hasUpdates = false,
   });
 
   final int seasonType;
   final int number;
+  @JsonKey(includeToJson: false)
+  @JsonKey(includeFromJson: false)
   final bool hasUpdates;
-  final List<WeekContent> content;
+  final List<Game> games;
+  final List<Video>? videos;
+
+  factory Week.fromJson(Map<String, dynamic> json) => _$WeekFromJson(json);
+  Map<String, dynamic> toJson() => _$WeekToJson(this);
 
   String get title => seasonType == 1
     ? 'Preseason Week $number'
@@ -44,20 +59,40 @@ class Week {
             ? 'Conference Championships'
             : 'Super Bowl';
 }
+@JsonSerializable(explicitToJson: true)
+class Game {
+  Game({
+    required this.homeTeam,
+    required this.awayTeam,
+    required this.date,
+    this.score,
+    this.video,
+  });
 
-class WeekContent {
-  WeekContent({required this.value});
-  final String? value;
+  factory Game.fromJson(Map<String, dynamic> json) =>
+    _$GameFromJson(json);
+  Map<String, dynamic> toJson() => _$GameToJson(this);
+
+  final String homeTeam;
+  final String awayTeam;
+  final String date;
+  final String? score;
+  final Video? video;
 }
 
-class LinkWeekContent extends WeekContent {
-  LinkWeekContent({
-    required super.value,
-    required this.icon,
-    required this.getLabel,
+@JsonSerializable()
+class Video {
+  Video({
+    required this.name,
+    required this.url,
   });
-  final IconData icon;
-  final String Function(BuildContext) getLabel;
+
+  factory Video.fromJson(Map<String, dynamic> json) =>
+    _$VideoFromJson(json);
+  Map<String, dynamic> toJson() => _$VideoToJson(this);
+
+  final String name;
+  final Uri url;
 }
 
 Future<Season> getSeasonData() async {
@@ -92,26 +127,16 @@ Future<Season> getSeasonData() async {
     seasonType: seasonType,
     number: weekNumber,
     hasUpdates: true,
-    // If this is cached this should be more generic
-    content: [
-      LinkWeekContent(
-        value: seasonType == 2
-        // This should be dependent on favorite team
-        ? 'https://www.google.com/search?q=NFL+NFC+West+Standings'
-        : seasonType == 3
-          ? 'https://www.google.com/search?q=NFL+Playoffs'
-          : null,
-        icon: FontAwesomeIcons.google,
-        getLabel: (context) => AppLocalizations.of(context)!.viewStandings,
-      ),
-    ],
+    // Should add game infos here
+    games: [],
   );
   // This will be fixed once stuff is more generic for cache
   final tempLastWeek = Week(
     seasonType: seasonType,
     number: weekNumber - 1,
     hasUpdates: true,
-    content: [],
+    // Should add game infos here
+    games: [],
   );
   // If regular season, also add "NFL: every week y highlight!" to links
   final weeks = weekNumber > 1
@@ -120,11 +145,14 @@ Future<Season> getSeasonData() async {
           seasonType: seasonType,
           number: weekNumber - 1,
           hasUpdates: true,
-          content: [
-            LinkWeekContent(
-              value: 'https://m.youtube.com/results?search_query=Tom+Grossi+If+the+NFL+was+scripted+${tempLastWeek.title}',
-              icon: FontAwesomeIcons.youtube,
-              getLabel: (context) => AppLocalizations.of(context)!.watchScripted,
+          // Should add game infos here
+          games: [],
+          videos: [
+            Video(
+              url: Uri.parse(
+                'https://m.youtube.com/results?search_query=Tom+Grossi+If+the+NFL+was+scripted+${tempLastWeek.title}'
+              ),
+              name: 'Scripted',
             ),
           ],
         ),
